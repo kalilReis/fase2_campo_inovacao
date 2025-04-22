@@ -1,4 +1,5 @@
 import os
+import json # Import json module
 from datetime import datetime
 import oracledb
 from dotenv import load_dotenv
@@ -145,6 +146,12 @@ class GerenciadorColheita:
 
     def salvar_no_banco(self, registro_colheita: dict):
         """Salva dados da colheita no banco Oracle"""
+        # Basic validation before saving
+        required_keys = ["data", "area_hectares", "id_colhedora", "total_toneladas", "toneladas_perdidas", "percentual_perda"]
+        if not all(key in registro_colheita for key in required_keys):
+            print(f"Erro: Registro inválido, faltando chaves. Registro: {registro_colheita}")
+            return False # Indicate failure
+
         try:
             # Usar variáveis de ambiente para a conexão
             conexao = oracledb.connect(
@@ -172,13 +179,63 @@ class GerenciadorColheita:
             ))
             
             conexao.commit()
-            print("Dados salvos no banco com sucesso!")
-            
+            # print("Dados salvos no banco com sucesso!") # Make it less verbose for bulk import
+            return True # Indicate success
+
         except oracledb.Error as erro:
-            print(f"Erro no banco de dados: {erro}")
+            print(f"Erro no banco de dados ao salvar {registro_colheita.get('id_colhedora', 'registro')}: {erro}")
+            return False # Indicate failure
         finally:
             if 'conexao' in locals() and conexao.is_healthy():
                 conexao.close()
+
+    def importar_de_json(self, caminho_arquivo: str):
+        """Importa dados de colheita de um arquivo JSON para o banco"""
+        try:
+            with open(caminho_arquivo, 'r', encoding='utf-8') as f:
+                dados_json = json.load(f)
+        except FileNotFoundError:
+            print(f"Erro: Arquivo '{caminho_arquivo}' não encontrado.")
+            return
+        except json.JSONDecodeError:
+            print(f"Erro: Falha ao decodificar JSON do arquivo '{caminho_arquivo}'. Verifique o formato.")
+            return
+        except Exception as e:
+            print(f"Erro ao ler o arquivo '{caminho_arquivo}': {e}")
+            return
+
+        if not isinstance(dados_json, list):
+            print("Erro: O arquivo JSON deve conter uma lista de registros de colheita.")
+            return
+
+        registros_importados = 0
+        registros_falha = 0
+        print(f"\nIniciando importação de '{caminho_arquivo}'...")
+
+        for registro in dados_json:
+            # Basic validation (can be expanded)
+            if isinstance(registro, dict):
+                 # Ensure required keys exist, maybe add type checks later
+                 required = ["data", "area_hectares", "id_colhedora", "total_toneladas", "toneladas_perdidas"]
+                 if all(k in registro for k in required):
+                     # Calculate percentual_perda if not present or overwrite
+                     total = registro.get("total_toneladas", 0)
+                     perdido = registro.get("toneladas_perdidas", 0)
+                     registro["percentual_perda"] = (perdido / total) * 100 if total > 0 else 0
+
+                     if self.salvar_no_banco(registro):
+                         registros_importados += 1
+                     else:
+                         registros_falha += 1
+                 else:
+                    print(f"Aviso: Registro ignorado por falta de chaves obrigatórias: {registro}")
+                    registros_falha += 1
+            else:
+                print(f"Aviso: Item ignorado no JSON (não é um dicionário): {registro}")
+                registros_falha += 1
+
+        print(f"Importação concluída: {registros_importados} registros importados com sucesso, {registros_falha} falharam ou foram ignorados.")
+
 
 def main():
     gerenciador = GerenciadorColheita()
@@ -187,8 +244,9 @@ def main():
         print("\n=== Gerenciador de Colheita de Cana ===")
         print("1. Registrar nova colheita")
         print("2. Ver estatísticas de perdas")
-        print("3. Listar todas as colheitas") # Nova opção
-        print("4. Sair") # Opção Sair agora é 4
+        print("3. Listar todas as colheitas")
+        print("4. Importar dados de JSON") # Nova opção de importação
+        print("5. Sair") # Opção Sair agora é 5
 
         opcao = input("Selecione uma opção: ")
         
@@ -222,10 +280,14 @@ def main():
             print(f"\nTotal de toneladas perdidas: {total_perdido:.2f}")
             print(f"Percentual médio de perda: {media_perda:.2f}%")
 
-        elif opcao == "3": # Nova opção para listar
+        elif opcao == "3":
             gerenciador.listar_todas_colheitas()
 
-        elif opcao == "4": # Opção Sair agora é 4
+        elif opcao == "4": # Nova opção para importar
+            caminho_json = input("Digite o caminho para o arquivo JSON de importação: ")
+            gerenciador.importar_de_json(caminho_json)
+
+        elif opcao == "5": # Opção Sair agora é 5
             print("Encerrando o programa...")
             break
             

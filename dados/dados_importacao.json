@@ -1,0 +1,16 @@
+[
+  {
+    "data": "2024-04-20",
+    "area_hectares": 150.5,
+    "id_colhedora": "CH-001",
+    "total_toneladas": 12000.75,
+    "toneladas_perdidas": 350.2
+  },
+  {
+    "data": "2024-04-21",
+    "area_hectares": 120.0,
+    "id_colhedora": "CH-002",
+    "total_toneladas": 9800.0,
+    "toneladas_perdidas": 210.5
+  }
+]
