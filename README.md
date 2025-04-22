@@ -6,9 +6,9 @@
 
 <br>
 
-# Nome do projeto
+# Gerenciador de Colheira de Cana de Açucar
 
-## Nome do grupo
+## Kalil
 
 ## 👨‍🎓 Integrantes
 
@@ -18,15 +18,19 @@
 
 ### Tutor(a)
 
-- <a href="https://www.linkedin.com/company/inova-fusca">Nome do Tutor</a>
+- <a href="https://www.linkedin.com/company/inova-fusca">Leonardo Ruiz Orabona</a>
 
 ### Coordenador(a)
 
-- <a href="https://www.linkedin.com/company/inova-fusca">Nome do Coordenador</a>
+- <a href="https://www.linkedin.com/company/inova-fusca"> André Godoy acho</a>
 
 ## 📜 Descrição
 
-_Descreva seu projeto com base no texto do PBL (até 600 palavras)_
+Este projeto consiste em uma aplicação de linha de comando (CLI) desenvolvida em Python para gerenciar dados de colheita de cana-de-açúcar. A aplicação permite registrar informações detalhadas sobre cada colheita, incluindo área colhida, identificação da colhedora, total de toneladas colhidas e toneladas perdidas.
+
+Os dados são armazenados em um banco de dados Oracle, e a aplicação calcula automaticamente o percentual de perda para cada registro. Além disso, oferece a funcionalidade de visualizar estatísticas agregadas, como o total de toneladas perdidas e o percentual médio de perda em todas as colheitas registradas.
+
+O objetivo é fornecer uma ferramenta simples para monitorar a eficiência da colheita e identificar potenciais áreas de melhoria na operação. A configuração da conexão com o banco de dados é feita através de variáveis de ambiente para maior segurança e flexibilidade.
 
 ## 📁 Estrutura de pastas
 
@@ -42,7 +46,68 @@ Dentre os arquivos e pastas presentes na raiz do projeto, definem-se:
 
 ## 🔧 Como executar o código
 
-_Acrescentar as informações necessárias sobre pré-requisitos (IDEs, serviços, bibliotecas etc.) e instalação básica do projeto, descrevendo eventuais versões utilizadas. Colocar um passo a passo de como o leitor pode baixar o seu código e executá-lo a partir de sua máquina ou seu repositório. Considere a explicação organizada em fase._
+**Pré-requisitos:**
+
+- Python 3.x
+- Oracle Database (com um usuário e schema configurados)
+- Acesso à linha de comando/terminal
+
+**Passos para execução:**
+
+1.  **Clone o repositório:**
+
+    ```bash
+    git clone <URL_DO_REPOSITORIO>
+    cd <NOME_DA_PASTA_DO_PROJETO>
+    ```
+
+2.  **Crie um ambiente virtual:**
+
+    ```bash
+    python3 -m venv .venv
+    ```
+
+3.  **Ative o ambiente virtual:**
+
+    - No Linux/macOS:
+      ```bash
+      source .venv/bin/activate
+      ```
+    - No Windows (Git Bash ou similar):
+      ```bash
+      source .venv/Scripts/activate
+      ```
+    - No Windows (Command Prompt):
+      ```cmd
+      .\.venv\Scripts\activate.bat
+      ```
+    - No Windows (PowerShell):
+      ```powershell
+      .\.venv\Scripts\Activate.ps1
+      ```
+
+4.  **Instale as dependências:**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    _(Se estiver usando o pip do ambiente virtual diretamente, como fizemos nos passos anteriores, pode usar `.venv/bin/pip install -r requirements.txt` no Linux/macOS ou o caminho equivalente no Windows)_
+
+5.  **Configure as variáveis de ambiente:**
+    Crie um arquivo chamado `.env` na raiz do projeto com o seguinte conteúdo, substituindo os valores pelos dados da sua conexão Oracle:
+
+    ```dotenv
+    DB_USER=seu_usuario_oracle
+    DB_PASSWORD=sua_senha_oracle
+    DB_DSN=seu_dsn_oracle # Ex: localhost/FREEPDB1 ou host:porta/service_name
+    ```
+
+6.  **Execute o script principal:**
+    ```bash
+    python src/main.py
+    ```
+    _(Se o ambiente virtual não estiver ativo no seu terminal atual, use o caminho completo: `.venv/bin/python src/main.py` no Linux/macOS ou o equivalente no Windows)_
 
 ## 🗃 Histórico de lançamentos
 
