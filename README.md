@@ -28,9 +28,9 @@
 
 Este projeto consiste em uma aplicação de linha de comando (CLI) desenvolvida em Python para gerenciar dados de colheita de cana-de-açúcar. A aplicação permite registrar informações detalhadas sobre cada colheita, incluindo área colhida, identificação da colhedora, total de toneladas colhidas e toneladas perdidas.
 
-Os dados são armazenados em um banco de dados Oracle, e a aplicação calcula automaticamente o percentual de perda para cada registro. Além disso, oferece a funcionalidade de visualizar estatísticas agregadas, como o total de toneladas perdidas e o percentual médio de perda em todas as colheitas registradas.
+Os dados são armazenados em um banco de dados Oracle, e a aplicação calcula automaticamente o percentual de perda para cada registro. Além disso, oferece a funcionalidade de visualizar estatísticas agregadas, como o total de toneladas perdidas e o percentual médio de perda em todas as colheitas registradas, listar todos os registros individuais e importar dados em lote a partir de um arquivo JSON.
 
-O objetivo é fornecer uma ferramenta simples para monitorar a eficiência da colheita e identificar potenciais áreas de melhoria na operação. A configuração da conexão com o banco de dados é feita através de variáveis de ambiente para maior segurança e flexibilidade.
+O objetivo é fornecer uma ferramenta simples e flexível para monitorar a eficiência da colheita e identificar potenciais áreas de melhoria na operação. A configuração da conexão com o banco de dados é feita através de variáveis de ambiente para maior segurança e flexibilidade.
 
 ## 📁 Estrutura de pastas
 
