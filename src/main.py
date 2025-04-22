@@ -1,31 +1,36 @@
-import json
 import os
 from datetime import datetime
 import oracledb
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente do arquivo .env
+load_dotenv()
+
+# Obter credenciais do banco de dados das variáveis de ambiente
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_DSN = os.getenv("DB_DSN")
+
+# Verificar se as variáveis de ambiente foram carregadas
+if not all([DB_USER, DB_PASSWORD, DB_DSN]):
+    print("Erro: Variáveis de ambiente do banco de dados (DB_USER, DB_PASSWORD, DB_DSN) não configuradas.")
+    # Considerar sair do script ou usar valores padrão/lançar exceção
+    # exit(1) # Descomente para sair se as variáveis não estiverem definidas
 
 class GerenciadorColheita:
     def __init__(self):
-        self.dados_colheita = []
         self.colhedoras = {}
-        # Create base directory path
-        self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.dados_dir = os.path.join(self.base_dir, 'dados')
-        self.dados_file = os.path.join(self.dados_dir, 'colheitas.json')
-        
-        # Ensure dados directory exists
-        os.makedirs(self.dados_dir, exist_ok=True)
-        
         # Criar tabela se não existir
         self.criar_tabela()
-        self.carregar_dados()
 
     def criar_tabela(self):
         """Cria a tabela no banco de dados se não existir"""
         try:
+            # Usar variáveis de ambiente para a conexão
             conexao = oracledb.connect(
-                user="system",
-                password="admin",
-                dsn="localhost/FREEPDB1"
+                user=DB_USER,
+                password=DB_PASSWORD,
+                dsn=DB_DSN
             )
             cursor = conexao.cursor()
             
@@ -49,27 +54,14 @@ class GerenciadorColheita:
                 END;
             """)
             conexao.commit()
-            
+
         except oracledb.Error as erro:
             print(f"Erro ao criar tabela: {erro}")
         finally:
-            if 'conexao' in locals():
+            if 'conexao' in locals() and conexao.is_healthy():
                 conexao.close()
 
-    def carregar_dados(self):
-        """Carrega dados do arquivo JSON se existir"""
-        try:
-            with open(self.dados_file, 'r') as arquivo:
-                self.dados_colheita = json.load(arquivo)
-        except FileNotFoundError:
-            self.dados_colheita = []
-
-    def salvar_dados(self):
-        """Salva dados no arquivo JSON"""
-        with open(self.dados_file, 'w') as arquivo:
-            json.dump(self.dados_colheita, arquivo, indent=4)
-
-    def registrar_colheita(self, area_hectares: float, id_colhedora: str, 
+    def registrar_colheita(self, area_hectares: float, id_colhedora: str,
                           total_toneladas: float, toneladas_perdidas: float) -> dict:
         """Registra novos dados de colheita"""
         if toneladas_perdidas > total_toneladas:
@@ -81,29 +73,66 @@ class GerenciadorColheita:
             "id_colhedora": id_colhedora,
             "total_toneladas": total_toneladas,
             "toneladas_perdidas": toneladas_perdidas,
-            "percentual_perda": (toneladas_perdidas / total_toneladas) * 100
+            "percentual_perda": (toneladas_perdidas / total_toneladas) * 100 if total_toneladas > 0 else 0
         }
-        
-        self.dados_colheita.append(registro_colheita)
-        self.salvar_dados()
+        # Não salva mais em JSON nem adiciona a lista local
         return registro_colheita
 
+    def ler_dados_do_banco(self) -> list:
+        """Lê todos os registros de colheita do banco de dados"""
+        dados = []
+        try:
+            # Usar variáveis de ambiente para a conexão
+            conexao = oracledb.connect(
+                user=DB_USER,
+                password=DB_PASSWORD,
+                dsn=DB_DSN
+            )
+            cursor = conexao.cursor()
+            cursor.execute("SELECT data_colheita, area_hectares, id_colhedora, total_toneladas, toneladas_perdidas, percentual_perda FROM registros_colheita ORDER BY data_colheita")
+            
+            # Fetch column names to create dictionaries
+            colnames = [desc[0].lower() for desc in cursor.description]
+            
+            for row in cursor.fetchall():
+                registro = dict(zip(colnames, row))
+                # Convert date object back to string if needed, or handle as date object
+                if isinstance(registro.get('data_colheita'), datetime):
+                     registro['data_colheita'] = registro['data_colheita'].strftime("%Y-%m-%d")
+                dados.append(registro)
+                
+        except oracledb.Error as erro:
+            print(f"Erro ao ler dados do banco: {erro}")
+        finally:
+            if 'conexao' in locals() and conexao.is_healthy():
+                conexao.close()
+        return dados
+
     def calcular_perdas(self) -> tuple:
-        """Calcula média de perdas"""
-        if not self.dados_colheita:
+        """Calcula média de perdas lendo do banco de dados"""
+        dados_colheita_db = self.ler_dados_do_banco()
+        if not dados_colheita_db:
             return (0, 0)
+
+        total_perdido = sum(registro["toneladas_perdidas"] for registro in dados_colheita_db if registro.get("toneladas_perdidas") is not None)
+        # Ensure percentual_perda exists and is not None before summing
+        valid_percentual_perda = [registro["percentual_perda"] for registro in dados_colheita_db if registro.get("percentual_perda") is not None]
         
-        total_perdido = sum(registro["toneladas_perdidas"] for registro in self.dados_colheita)
-        media_percentual_perda = sum(registro["percentual_perda"] for registro in self.dados_colheita) / len(self.dados_colheita)
+        if not valid_percentual_perda:
+             media_percentual_perda = 0
+        else:
+             media_percentual_perda = sum(valid_percentual_perda) / len(valid_percentual_perda)
+             
         return (total_perdido, media_percentual_perda)
 
     def salvar_no_banco(self, registro_colheita: dict):
         """Salva dados da colheita no banco Oracle"""
         try:
+            # Usar variáveis de ambiente para a conexão
             conexao = oracledb.connect(
-                user="system",
-                password="admin",
-                dsn="localhost/FREEPDB1"
+                user=DB_USER,
+                password=DB_PASSWORD,
+                dsn=DB_DSN
             )
             cursor = conexao.cursor()
             
@@ -130,7 +159,7 @@ class GerenciadorColheita:
         except oracledb.Error as erro:
             print(f"Erro no banco de dados: {erro}")
         finally:
-            if 'conexao' in locals():
+            if 'conexao' in locals() and conexao.is_healthy():
                 conexao.close()
 
 def main():
