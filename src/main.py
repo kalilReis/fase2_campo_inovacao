@@ -108,6 +108,24 @@ class GerenciadorColheita:
                 conexao.close()
         return dados
 
+    def listar_todas_colheitas(self):
+        """Lista todos os registros de colheita formatados"""
+        dados = self.ler_dados_do_banco()
+        if not dados:
+            print("\nNenhum registro de colheita encontrado.")
+            return
+
+        print("\n--- Todos os Registros de Colheita ---")
+        for registro in dados:
+            print(f"Data: {registro.get('data_colheita', 'N/A')}, "
+                  f"Área (ha): {registro.get('area_hectares', 'N/A'):.2f}, "
+                  f"Colhedora: {registro.get('id_colhedora', 'N/A')}, "
+                  f"Total (ton): {registro.get('total_toneladas', 'N/A'):.2f}, "
+                  f"Perdido (ton): {registro.get('toneladas_perdidas', 'N/A'):.2f}, "
+                  f"Perda (%): {registro.get('percentual_perda', 'N/A'):.2f}%")
+        print("--------------------------------------")
+
+
     def calcular_perdas(self) -> tuple:
         """Calcula média de perdas lendo do banco de dados"""
         dados_colheita_db = self.ler_dados_do_banco()
@@ -169,8 +187,9 @@ def main():
         print("\n=== Gerenciador de Colheita de Cana ===")
         print("1. Registrar nova colheita")
         print("2. Ver estatísticas de perdas")
-        print("3. Sair")
-        
+        print("3. Listar todas as colheitas") # Nova opção
+        print("4. Sair") # Opção Sair agora é 4
+
         opcao = input("Selecione uma opção: ")
         
         if opcao == "1":
@@ -202,8 +221,11 @@ def main():
             total_perdido, media_perda = gerenciador.calcular_perdas()
             print(f"\nTotal de toneladas perdidas: {total_perdido:.2f}")
             print(f"Percentual médio de perda: {media_perda:.2f}%")
-            
-        elif opcao == "3":
+
+        elif opcao == "3": # Nova opção para listar
+            gerenciador.listar_todas_colheitas()
+
+        elif opcao == "4": # Opção Sair agora é 4
             print("Encerrando o programa...")
             break
             
